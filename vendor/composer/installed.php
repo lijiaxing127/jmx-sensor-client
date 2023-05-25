@@ -1,8 +1,8 @@
 <?php return array(
     'root' => array(
-        'name' => 'hyperf/hyperf-skeleton',
-        'pretty_version' => '1.0.0+no-version-set',
-        'version' => '1.0.0.0',
+        'name' => 'jiumuxing/sensor-client',
+        'pretty_version' => 'v1.0.2',
+        'version' => '1.0.2.0',
         'reference' => NULL,
         'type' => 'project',
         'install_path' => __DIR__ . '/../../',
@@ -319,15 +319,6 @@
             'aliases' => array(),
             'dev_requirement' => false,
         ),
-        'hyperf/hyperf-skeleton' => array(
-            'pretty_version' => '1.0.0+no-version-set',
-            'version' => '1.0.0.0',
-            'reference' => NULL,
-            'type' => 'project',
-            'install_path' => __DIR__ . '/../../',
-            'aliases' => array(),
-            'dev_requirement' => false,
-        ),
         'hyperf/ide-helper' => array(
             'pretty_version' => 'v2.2.33',
             'version' => '2.2.33.0',
@@ -433,6 +424,15 @@
             'reference' => '7a85d56b8d9416d9488a4a809abcd8159680825b',
             'type' => 'library',
             'install_path' => __DIR__ . '/../hyperf/websocket-client',
+            'aliases' => array(),
+            'dev_requirement' => false,
+        ),
+        'jiumuxing/sensor-client' => array(
+            'pretty_version' => 'v1.0.2',
+            'version' => '1.0.2.0',
+            'reference' => NULL,
+            'type' => 'project',
+            'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
             'dev_requirement' => false,
         ),

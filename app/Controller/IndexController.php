@@ -38,10 +38,117 @@ class IndexController extends AbstractController
 
     public function index()
     {
-        return [
-            'method' => 1,
-            'message' => "Hello {1}.",
-        ];
+        return 'jmx-sensor-client is runing';
+        $db = new \SQLite3('sensor.db');
+        $data = $db->query('SELECT * FROM sensor_data where status = 0 order by  collect_time  desc limit 100');
+        $results = [];
+        $tmp = [];
+        while ($row = $data->fetchArray()) {
+            $tmp[]=$row;
+        }
+        foreach ($tmp as $row){
+            $url = "http://demo.jinshenagr.com/prod/environmental/sensor/add";
+            
+            $client = new Client();
+            $response = $client->request('POST', $url, [
+                'headers' => [
+                    'token' => 'this is token'
+                ],
+                'multipart' => [
+                    [
+                        'name' => 'id',
+                        'contents' => $row['id']
+                    ],
+                    [
+                        'name' => 'sn',
+                        'contents' => $row['sn']
+                    ],
+                    [
+                        'name' => 'data',
+                        'contents' => $row['data']
+                    ],
+                    [
+                        'name' => 'collect_time',
+                        'contents' => $row['collect_time']
+                    ],
+                ]
+            ]);
+            $data = json_decode($response->getBody()->getContents(),true);
+
+            $id = $row['id'];
+            if (isset($data['error'])&&$data['error']==0){
+                if ($db->exec("UPDATE sensor_data SET status=1 WHERE id=$id")){
+                    $results[]=  1;
+                }else{
+                    $results[]=   2;
+                }
+            }else{
+                $results[]=   3;
+            }
+        }
+
+        $count = array_count_values($results);
+        echo "本次请求总数据个数:".count($results).PHP_EOL;
+        echo "更新数据成功个数:".(isset($count[1])?$count[1]:0).PHP_EOL;
+        echo "更新数据失败个数:".(isset($count[2])?$count[2]:0).PHP_EOL;
+        echo "请求错误数据个数:".(isset($count[3])?$count[3]:0).PHP_EOL;
+
+// 关闭数据库连接
+        $db->close();
+
+
+        $db = new \SQLite3('sensor.db');
+        $data = $db->query('SELECT * FROM sensor_data where status = 0 order by  collect_time  desc limit 100');
+        $results = [];
+        while ($row = $data->fetchArray()) {
+            $url = "http://demo.jinshenagr.com/prod/environmental/sensor/add";
+            $client = new Client();
+            $response = $client->request('POST', $url, [
+                'headers' => [
+                    'token' => 'this is token'
+                ],
+                'multipart' => [
+                    [
+                        'name' => 'id',
+                        'contents' => $row['id']
+                    ],
+                    [
+                        'name' => 'sn',
+                        'contents' => $row['sn']
+                    ],
+                    [
+                        'name' => 'data',
+                        'contents' => $row['data']
+                    ],
+                    [
+                        'name' => 'collect_time',
+                        'contents' => $row['collect_time']
+                    ],
+                ]
+            ]);
+            $data = json_decode($response->getBody(),true);
+            $id = $row['id'];
+            if (isset($data['error'])&&$data['error']==0){
+                if ($db->exec("UPDATE sensor_data SET status=1 WHERE id=$id")){
+                    $results[]=  1;
+                }else{
+                    $results[]=   2;
+                }
+            }else{
+                $results[]=   3;
+            }
+          
+        }
+        $count = array_count_values($results);
+        echo "本次请求总数据个数:".count($results).PHP_EOL;
+        echo "更新数据成功个数:".(isset($count[1])?$count[1]:0).PHP_EOL;
+        echo "更新数据失败个数:".(isset($count[2])?$count[2]:0).PHP_EOL;
+        echo "请求错误数据个数:".(isset($count[3])?$count[3]:0).PHP_EOL;
+
+// 关闭数据库连接
+        $db->close();
+
+        return 'jmx-sensor-client is runing';
 
         $data =   Db::table('sensor_data')->where('status', 0)->limit(10)->orderBy('collect_time','desc')->get();
         $sum = count($data);
