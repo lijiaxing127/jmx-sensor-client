@@ -47,28 +47,41 @@ class TcpListener implements ListenerInterface
      */
     public function process(object $event)
     {
+        
+//        $db = new \SQLite3('sensor.db');
+        $db = \App\Model\Sqlite3::getInstance()->getDb();
         // 事件触发后该监听器要执行的代码写在这里，比如该示例下的发送用户注册成功短信等
         if ($event instanceof TcpBefore){
-            $id = Db::table('sensor_data')->insertGetId(
-                   ['sn' => $event->sn,
-                    'data' => $event->data,
-                    'collect_time' => date('Y-m-d H:i:s')]
-            );
-            $event->id = $id;
+            $collect_time = date('Y-m-d H:i:s');
+//            sleep(0.02);
+            $db->exec("INSERT INTO sensor_data (sn, `data`,status,collect_time) VALUES ('$event->sn', '$event->data',0,'$collect_time')");
+            $event->id = $db->lastInsertRowID();
+            echo 'insert id is '.$event->id .PHP_EOL;
+
         }
         if ($event instanceof TcpAfter){
-            $data = Db::table('sensor_data')->find($event->id);
+            $result = $db->query('SELECT * FROM sensor_data where id ='.$event->id);
+            $row = $result->fetchArray();
+            $data = [];
+            if ($row){
+                $data= [
+                    'id'=>$row['id'],
+                    'sn'=>$row['sn'],
+                    'data'=>$row['data'],
+                    'collect_time'=>$row['collect_time'],
+                ];
+            }
             $event->data  = json_encode($data);
         }
         if ($event instanceof SensorStatus){
             $data = json_decode($event->data,true);
             $id =$event->id;
             if (isset($data['error'])&&$data['error']==0){
-                $saveData = [
-                    'status'=>1,
-                ];
-            Db::table('sensor_data')->where('id', $id)->update($saveData);
+//                sleep(0.03);
+                 $r = $db->exec("UPDATE sensor_data SET status=1 WHERE id= $id");
+                 echo 'update is '.$r .PHP_EOL;
             }
         }
+//        $db->close();
     }
 }

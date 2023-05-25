@@ -36,4 +36,17 @@ return [
             ],
         ],
     ],
+    'sqlite3' => [
+        'driver' => 'sqlite',
+        'database' =>'/home/ubuntu/test/sensor.db',
+        'prefix' => '',
+        'pool' => [
+            'min_connections' => 1,
+            'max_connections' => 10,
+            'connect_timeout' => 10.0,
+            'wait_timeout' => 3.0,
+            'heartbeat' => -1,
+            'max_idle_time' => (int) env('DB_MAX_IDLE_TIME', 60),
+        ],
+    ],
 ];

@@ -30,43 +30,35 @@ class FooTask
     public function execute()
     {
         $this->logger->info('定时上传没有处理的数据:' . date('Y-m-d H:i:s', time()));
-        $data = Db::table('sensor_data')->where('status', 0)->limit(100)->orderBy('collect_time', 'desc')->get();
-        $sum = count($data);
+        $db = \App\Model\Sqlite3::getInstance()->getDb();
+        $data = $db->query('SELECT * FROM sensor_data where status = 0 order by  collect_time  desc limit 100');
         $results = [];
-        $parallel = new Parallel(5);
-        if ($sum > 0) {
-            foreach ($data as $v) {
-                $parallel->add(function () use($v) {
-                    //                    $url = 'http://sensor.jinshenagr.com/api/sensorAdd';
-                    //                    $url = "http://10.168.1.179:9501/environmental/sensor/add";
-                    $url = "http://demo.jinshenagr.com/prod/environmental/sensor/add";
-                    $client = new Client();
-                    $response = $client->request('POST', $url, ['headers' => ['token' => 'this is token'], 'multipart' => [['name' => 'id', 'contents' => $v->id], ['name' => 'sn', 'contents' => $v->sn], ['name' => 'data', 'contents' => $v->data], ['name' => 'collect_time', 'contents' => $v->collect_time]]]);
-                    $data = json_decode($response->getBody(), true);
-                    $id = $v->id;
-                    if (isset($data['error']) && $data['error'] == 0) {
-                        $saveData = ['status' => 1];
-                        if (Db::table('sensor_data')->where('id', $id)->update($saveData)) {
-                            return 1;
-                        } else {
-                            return 2;
-                        }
-                    } else {
-                        return 3;
-                    }
-                });
+        $tmp = [];
+        while ($row = $data->fetchArray()) {
+            $tmp[] = $row;
+        }
+        foreach ($tmp as $row) {
+            $url = "http://demo.jinshenagr.com/prod/environmental/sensor/add";
+            $client = new Client();
+            $response = $client->request('POST', $url, ['headers' => ['token' => 'this is token'], 'multipart' => [['name' => 'id', 'contents' => $row['id']], ['name' => 'sn', 'contents' => $row['sn']], ['name' => 'data', 'contents' => $row['data']], ['name' => 'collect_time', 'contents' => $row['collect_time']]]]);
+            $data = json_decode($response->getBody()->getContents(), true);
+            $id = $row['id'];
+            if (isset($data['error']) && $data['error'] == 0) {
+                if ($db->exec("UPDATE sensor_data SET status=1 WHERE id={$id}")) {
+                    $results[] = 1;
+                } else {
+                    $results[] = 2;
+                }
+            } else {
+                $results[] = 3;
             }
         }
-        try {
-            $results = $parallel->wait();
-        } catch (ParallelExecutionException $e) {
-            //            var_dump($e->getResults());  //获取协程中的返回值。
-            //            var_dump($e->getThrowables()); //获取协程中出现的异常。
-        }
         $count = array_count_values($results);
-        echo "本次请求总数据个数:" . $sum . PHP_EOL;
+        echo "本次请求总数据个数:" . count($results) . PHP_EOL;
         echo "更新数据成功个数:" . (isset($count[1]) ? $count[1] : 0) . PHP_EOL;
         echo "更新数据失败个数:" . (isset($count[2]) ? $count[2] : 0) . PHP_EOL;
         echo "请求错误数据个数:" . (isset($count[3]) ? $count[3] : 0) . PHP_EOL;
+        // 关闭数据库连接
+        //        $db->close();
     }
 }
